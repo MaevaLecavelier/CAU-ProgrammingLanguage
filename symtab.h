@@ -22,13 +22,13 @@ typedef struct Param{
 	int par_type;
 	char param_name[MAXTOKENLEN];
 	// to store value
-	int ival; double fval; char *st_sval;
+	int ival; float fval; char *st_sval;
 	int passing; // value or reference
 }Param;
 
-/* a linked list of references (lineno's) for each variable */
-typedef struct RefList{ 
-    int lineno;
+/* a linked list of references (lineNumber's) for each variable */
+typedef struct RefList{
+    int lineNumber;
     struct RefList *next;
     int type;
 }RefList;
@@ -40,12 +40,12 @@ typedef struct list_t{
     int scope;
     RefList *lines;
 	// to store value and sometimes more information
-	int st_ival; double st_fval; char *st_sval;
+	int st_ival; float st_fval; char *st_sval;
 	// type
     int st_type;
 	int inf_type; // for arrays (info type) and functions (return type)
 	// array stuff
-	int *i_vals; double *f_vals; char **s_vals;
+	int *i_vals; float *f_vals; char **s_vals;
 	int array_size;
 	// function parameters
 	Param *parameters;
@@ -59,8 +59,8 @@ static list_t **hash_table;
 
 // Function Declarations
 void init_hash_table(); // initialize hash table
-unsigned int hash(char *key); // hash function 
-void insert(char *name, int len, int type, int lineno); // insert entry
+unsigned int hash(char *key); // hash function
+void insert(char *name, int len, int type, int lineNumber); // insert entry
 list_t *lookup(char *name); // search for entry
 list_t *lookup_scope(char *name, int scope); // search for entry in scope
 void hide_scope(); // hide the current scope

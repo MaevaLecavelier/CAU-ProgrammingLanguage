@@ -8,8 +8,11 @@
 	#include "parser.tab.h"
 	extern FILE *yyin;
 	extern FILE *yyout;
-	
-	int lineno = 1; // initialize to 1
+
+	int lineNumber = 1; // initialize to 1
+	int spaceNumber = 0;
+	int tabNumber = 0;
+	int type;
 	void ret_print(char *token_type);
 	void yyerror();
 %}
@@ -18,67 +21,67 @@
 
 alpha 		[a-zA-Z]
 digit 		[0-9]
-alnum 		{alpha}|{digit}
+alnum 		[a-zA-Z0-9]
 print		[ -~]
 
-ID 			{alpha}+{alnum}*
-ICONST		"0"|[0-9]{digit}*
-FCONST		"0"|{digit}*"."{digit}+
+ID 			[a-zA-Z]+[a-zA-Z0-9]*
+ICONST		{digit}+
+FCONST		{digit}*"."{digit}+
 CCONST		(\'{print}\')|(\'\\[nftrbv]\')
 STRING		\"{print}*\"
 
 %%
 
-"//".*					{ printf("Eat up comment at line %d\n", lineno); } 
 
-"/*"					{ printf("Eat up comment from line %d ", lineno); BEGIN(ML_COMMENT); }
-<ML_COMMENT>"*/" 		{ printf("to line %d\n", lineno); BEGIN(INITIAL); }
-<ML_COMMENT>[^*\n]+		
-<ML_COMMENT>"*"			
-<ML_COMMENT>"\n"		{ lineno += 1; }
+"//".*					{ printf("// Comment at line %d\n", lineNumber); }
 
-
-"char"|"CHAR"       	{ return CHAR; }
-"int"|"INT"				{ return INT; }
-"float"|"FLOAT"			{ return FLOAT; }
-"double"|"DOUBLE"		{ return DOUBLE; }
-"if"|"IF"				{ return IF; }
-"else"|"ELSE"			{ return ELSE; }
-"while"|"WHILE"			{ return WHILE; }
-"for"|"FOR"				{ return FOR; }
-"continue"|"CONTINUE"	{ return CONTINUE; }
-"break"|"BREAK"			{ return BREAK; }
-"void"|"VOID"			{ return VOID; }
-"return"|"RETURN"		{ return RETURN; }
+"/*"								{ printf("/* Comment from line %d ", lineNumber); BEGIN(ML_COMMENT); }
+<ML_COMMENT>"*/" 		{ printf("to line %d */\n", lineNumber); BEGIN(INITIAL); }
+<ML_COMMENT>[^*\n]+
+<ML_COMMENT>"*"
+<ML_COMMENT>"\n"		{ lineNumber += 1; }
 
 
-"+"|"-"					{ return ADDOP; }
-"*"						{ return MULOP; }
-"/"						{ return DIVOP; }
-"++"|"--"				{ return INCR; }
-"||"					{ return OROP; }
-"&&"					{ return ANDOP; }
-"!"						{ return NOTOP; }
-"=="|"!="				{ return EQUOP; }
-">"|"<"|">="|"<="		{ return RELOP; }
+"int"|"INT"							{ type = INT_TYPE; return INT; }
+"float"|"FLOAT"					{ type = REAL_TYPE; return FLOAT; }
+"if"|"IF"								{ printf("If statement at line %d\n", lineNumber); return IF; }
+"else"|"ELSE"						{ printf("Else statement at line %d\n", lineNumber); return ELSE; }
+"elif"|"ELIF"						{ printf("Elif statement at line %d\n", lineNumber); return ELIF; }
+"while"|"WHILE"					{ printf("While statement at line %d\n", lineNumber); return WHILE; }
+"for"|"FOR"							{ printf("For statement at line %d\n", lineNumber); return FOR; }
+"return"|"RETURN"				{ return RETURN; }
+"mainprog"|"MAINPROG" 	{ return MAINPROG; }
+"function"|"FUNCTION" 	{ type = FUNCTION_TYPE; return FUNCTION; }
+"procedure"|"PROCEDURE" { type = FUNCTION_TYPE; return PROCEDURE; }
+"begin"|"BEGIN"					{ return TBEGIN; }
+"end"|"END"							{ return END; }
+"print"|"PRINT" 				{ return PRINT; }
+"in"|"IN"								{ return IN; }
+
+"+"								{ return ADDOP; }
+"-"								{ return SUBOP; }
+"*"								{ return MULOP; }
+"/"								{ return DIVOP; }
+"!"								{ return NOTOP; }
+"=="|"!="					{ return EQUOP; }
+">"|"<"|">="|"<="	{ return RELOP; }
 
 
 "("				{ return LPAREN; }
 ")"				{ return RPAREN; }
-"]"				{ return LBRACK; }
-"["				{ return RBRACK; }
+"["				{ return LBRACK; }
+"]"				{ return RBRACK; }
 "{"				{ return LBRACE; }
 "}"				{ return RBRACE; }
 ";"				{ return SEMI; }
+":"				{ return DDOT; }
 "."				{ return DOT; }
 ","				{ return COMMA; }
 "="				{ return ASSIGN; }
-"&"				{ return REFER; }
-
 
 {ID} 			{
 					// insert identifier into symbol table
-					insert(yytext, strlen(yytext), UNDEF, lineno);
+					insert(yytext, strlen(yytext), type, lineNumber);
 					return ID;
 				}
 {ICONST} 		{ return ICONST; }
@@ -87,8 +90,16 @@ STRING		\"{print}*\"
 {STRING} 		{ return STRING; }
 
 
-"\n"			{ lineno += 1; }
-[ \t\r\f]+			/* eat up whitespace */
+[\n]?			{ lineNumber = lineNumber + 1; }
+[ \t]+		{ tabNumber = tabNumber + 1; }
+[\s]+		{ spaceNumber = spaceNumber + 1; }
+"EOF"[\n]	{
+		printf("end of file\n");
+		yyout = fopen("symtab_dump.out", "w");
+		symtab_dump(yyout);
+		fclose(yyout);
+		exit(0);
+}
 
 .				{ yyerror("Unrecognized character"); }
 
