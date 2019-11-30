@@ -8,10 +8,9 @@
 #define UNDEF 0
 #define INT_TYPE 1
 #define REAL_TYPE 2
-#define STR_TYPE 3
-#define LOGIC_TYPE 4
-#define ARRAY_TYPE 5
-#define FUNCTION_TYPE 6
+#define ARRAY_TYPE 3
+#define FUNCTION_TYPE 4
+#define MAINPROG_TYPE 5
 
 /* how parameter is passed */
 #define BY_VALUE 1
@@ -60,7 +59,7 @@ static list_t **hash_table;
 // Function Declarations
 void init_hash_table(); // initialize hash table
 unsigned int hash(char *key); // hash function
-void insert(char *name, int len, int type, int lineNumber); // insert entry
+void insert(char *name, int len, int type, int inf_type, int lineNumber); // insert entry
 list_t *lookup(char *name); // search for entry
 list_t *lookup_scope(char *name, int scope); // search for entry in scope
 void hide_scope(); // hide the current scope

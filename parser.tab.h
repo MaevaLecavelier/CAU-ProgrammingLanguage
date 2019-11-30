@@ -80,9 +80,7 @@ extern int yydebug;
     ASSIGN = 290,
     ID = 291,
     ICONST = 292,
-    FCONST = 293,
-    CCONST = 294,
-    STRING = 295
+    FCONST = 293
   };
 #endif
 

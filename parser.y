@@ -4,6 +4,7 @@
 	#include <stdlib.h>
 	#include <string.h>
 	extern FILE *yyin;
+	extern FILE *yyverb;
 	extern FILE *yyout;
 	extern int lineNumber;
 	extern int spaceNumber;
@@ -18,7 +19,7 @@
 %token RETURN MAINPROG FUNCTION PROCEDURE TBEGIN END IN PRINT
 %token ADDOP SUBOP MULOP DIVOP NOTOP EQUOP RELOP
 %token LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE SEMI DDOT DOT COMMA ASSIGN
-%token ID ICONST FCONST CCONST STRING
+%token ID ICONST FCONST
 
 %start program
 
@@ -32,7 +33,7 @@ declarations: type identifier_list SEMI declarations | /*empty*/ ;
 
 identifier_list: ID | ID COMMA identifier_list;
 
-type: standard_type | standard_type LBRACE ICONST RBRACE ;
+type: standard_type | standard_type LBRACK ICONST RBRACK ;
 
 standard_type: INT | FLOAT ;
 
@@ -46,8 +47,7 @@ subprog_head: FUNCTION ID arguments DDOT standard_type |
 
 arguments: LPAREN parameter_list RPAREN | /*empty*/ ;
 
-parameter_list: identifier_list DDOT type | identifier_list DDOT type SEMI parameter_list;
-/* c'est pourri, je ferai type identifier_list plutôt parce que là...*/
+parameter_list: type DDOT identifier_list | type DDOT identifier_list SEMI parameter_list;
 
 
 compound_statement: TBEGIN statement_list END;
@@ -64,15 +64,22 @@ statement: 	variable ASSIGN expression |
 						RETURN expression
 						;
 
-if_statement: IF expression DDOT statement ;
+if_statement: IF expression DDOT statement_list elif_statement else_statement |
+							IF expression DDOT statement_list else_statement |
+							IF expression DDOT statement_list
+							;
 
-while_statement: WHILE expression DDOT statement {printf("while statement \n");};
+else_statement: ELSE DDOT statement;
 
-for_statement: FOR expression IN expression DDOT statement {printf("for statement \n");};
+elif_statement: ELIF expression DDOT statement_list;
+
+while_statement: WHILE expression DDOT statement;
+
+for_statement: FOR simple_expression IN expression DDOT statement;
 
 print_statement: PRINT | PRINT LPAREN expression RPAREN;
 
-variable: ID | ID LBRACE expression RBRACE;
+variable: ID | ID LBRACK expression RBRACK;
 
 procedure_statement: ID LPAREN actual_parameter_expression RPAREN;
 
@@ -86,7 +93,7 @@ simple_expression: term | term additional_op simple_expression;
 
 term: factor | factor multop term;
 
-factor: ICONST | FCONST | variable | NOTOP factor | sign factor;
+factor: variable | ICONST | FCONST | NOTOP factor | sign factor;
 
 sign: ADDOP | SUBOP;
 
@@ -101,6 +108,7 @@ multop: DIVOP | MULOP;
 void yyerror ()
 {
   fprintf(stderr, "Syntax error at line %d\n", lineNumber);
+	exit(1);
 }
 
 int main (int argc, char *argv[]){
@@ -118,6 +126,9 @@ int main (int argc, char *argv[]){
 	yyout = fopen("symtab_dump.out", "w");
 	symtab_dump(yyout);
 	fclose(yyout);
+
+
+
 
 	return flag;
 }
